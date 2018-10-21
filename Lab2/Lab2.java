@@ -9,7 +9,6 @@ import lejos.hardware.sensor.EV3TouchSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorMode;
 import lejos.utility.Delay;
-import lejos.hardware.sensor;
 import lejos.hardware.lcd.LCD;
 
 public class Lab2 {
@@ -35,27 +34,54 @@ public class Lab2 {
 		mB.setSpeed(200);
 		
 		Button.ENTER.waitForPressAndRelease();
-		//forward(mA, mB);
-		mA.startSynchronization();
-		mB.forward();
-		mA.forward();
-		mA.endSynchronization();
 		
+		ultra.fetchSample(sample_sonic,0);
+		float distance = sample_sonic[0];
+		float[] d = new float[3];
+		//LCD.drawInt(distance, 0, 4);
+		float desiredDistance = .1f;
+		while(distance < .5){
+			LCD.clear();
+			for(int i = 0; i < 3; i++){
+				ultra.fetchSample(sample_sonic, 0);
+				d[i] = sample_sonic[0];
+			}
+			distance = (d[0] + d[1] + d[2]) / 3.0f;
+			
+			float difference = distance - desiredDistance;
+			LCD.drawInt((int)(difference * 100), 0, 4);
+			LCD.drawInt((int)(distance * 100), 0, 2);
+			if(distance > desiredDistance + .05){
+				//difference is between .2, -.1
+				
+				mA.setSpeed(200);
+				//mB.setSpeed(200 + difference * 50);
+				mB.setSpeed(300);
+				forward(mA, mB);
+			}
+			else if(distance < desiredDistance){
+				//mA.setSpeed(200 + (difference * -1 * 100));
+				mA.setSpeed(300);
+				mB.setSpeed(200);
+				forward(mA, mB);
+			}
+			else{
+				mA.setSpeed(200);
+				mB.setSpeed(200);
+				forward(mA, mB);
+			}
+		}
 		
-//		ultra.fetchSample(sample_sonic,0);
-//		float distance = sample_sonic[0];
-//		float[] d = new float[3];
-//		//LCD.drawInt(distance, 0, 4);
-//		while(distance >= .56){
-//			LCD.clear();
-//			//LCD.drawInt(distance, 0, 4);
-//			for(int i = 0; i < 3; i++){
-//				ultra.fetchSample(sample_sonic, 0);
-//				d[i] = sample_sonic[0];
-//			}
-//			distance = (d[0] + d[1] + d[2]) / 3.0f;
-//			//Delay.msDelay(500);
-//		}
+		stop(mA, mB);
+		float a = 0;
+		while(a < -5){
+			for(int i = 0; i < 3; i++){
+				ultra.fetchSample(sample_sonic, 0);
+				d[i] = sample_sonic[0];
+			}
+			distance = (d[0] + d[1] + d[2]) / 3.0f;
+			LCD.drawInt((int)(distance * 100), 0, 2);
+		}
 
 /*		touch1.fetchSample(sample_touch, 0);
 		LCD.drawInt((int)(sample_touch[0]), 0, 4);
