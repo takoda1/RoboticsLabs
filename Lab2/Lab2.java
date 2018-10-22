@@ -10,6 +10,8 @@ import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorMode;
 import lejos.utility.Delay;
 import lejos.hardware.lcd.LCD;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 
 public class Lab2 {
 	public static void main(String[] args){
@@ -35,53 +37,101 @@ public class Lab2 {
 		
 		Button.ENTER.waitForPressAndRelease();
 		
+		touch.fetchSample(sample_touch, 0);
+		while(sample_touch[0] == 0){
+			forward(mA, mB);
+			touch.fetchSample(sample_touch, 0);
+		}
+		stop(mA, mB);
+		backward(mA, mB);
+		Delay.msDelay(1500);
+		stop(mA, mB);
+		
+		mA.rotate(380);
+		
 		ultra.fetchSample(sample_sonic,0);
 		float distance = sample_sonic[0];
 		float[] d = new float[3];
 		//LCD.drawInt(distance, 0, 4);
 		float desiredDistance = .1f;
+		int count = 0;
+		ArrayList<Float> running = new ArrayList<Float>(10);
 		while(distance < .5){
 			LCD.clear();
+			int tempCount = 0;
 			for(int i = 0; i < 3; i++){
 				ultra.fetchSample(sample_sonic, 0);
 				d[i] = sample_sonic[0];
+				if(d[i] > 1.5 || d[i] < 0){
+					
+				}
+				else{
+					distance += d[i];
+					tempCount++;
+				}
 			}
-			distance = (d[0] + d[1] + d[2]) / 3.0f;
+			distance = distance/(float)tempCount;
+		
+			running.add(distance);
+			if(running.size() > 10){
+				running.remove(0);
+			}
 			
-			float difference = distance - desiredDistance;
-			LCD.drawInt((int)(difference * 100), 0, 4);
-			LCD.drawInt((int)(distance * 100), 0, 2);
-			if(distance > desiredDistance + .05){
-				//difference is between .2, -.1
-				
-				mA.setSpeed(200);
-				//mB.setSpeed(200 + difference * 50);
-				mB.setSpeed(300);
-				forward(mA, mB);
+			float distance1 = 0;
+			for(int i = 0; i < running.size(); i ++){
+				distance1 += running.get(i);
 			}
-			else if(distance < desiredDistance){
-				//mA.setSpeed(200 + (difference * -1 * 100));
-				mA.setSpeed(300);
-				mB.setSpeed(200);
-				forward(mA, mB);
+			distance1 = distance1/10;
+			
+			float difference = distance1 - desiredDistance;
+			LCD.drawInt((int)(difference * 100), 0, 4);
+			LCD.drawInt((int)(distance1 * 100), 0, 2);
+			if(distance1 > desiredDistance + .05){
+				//difference is between .2, -.1
+//				mA.rotate(-30);
+//				mB.rotate(30);
+//				forward(mA, mB);
+//				Delay.msDelay(1500);
+//				stop(mA, mB);
+				moveLeft(mA, mB);
+			}
+			else if(distance1 < desiredDistance){
+				moveRight(mA, mB);
 			}
 			else{
-				mA.setSpeed(200);
-				mB.setSpeed(200);
-				forward(mA, mB);
+				equalMove(mA, mB);
 			}
 		}
+		mA.setSpeed(200);
+		mB.setSpeed(200);
 		
 		stop(mA, mB);
-		float a = 0;
-		while(a < -5){
-			for(int i = 0; i < 3; i++){
-				ultra.fetchSample(sample_sonic, 0);
-				d[i] = sample_sonic[0];
-			}
-			distance = (d[0] + d[1] + d[2]) / 3.0f;
-			LCD.drawInt((int)(distance * 100), 0, 2);
-		}
+		forward(mA, mB);
+		Delay.msDelay(1000);
+		stop(mA, mB);
+		Delay.msDelay(500);
+		
+		mB.rotate(360);
+		Delay.msDelay(500);
+		
+		forward(mA, mB);
+		Delay.msDelay(7550);
+		stop(mA, mB);
+//		mA.startSynchronization();
+//		//mA.rotate(1433);
+//		mA.rotateTo(1433);
+//		mA.endSynchronization();
+		
+//		float a = 0;
+//		while(a < -5.0f){
+//			for(int i = 0; i < 3; i++){
+//				ultra.fetchSample(sample_sonic, 0);
+//				d[i] = sample_sonic[0];
+//			}
+//			distance = (d[0] + d[1] + d[2]) / 3.0f;
+//			LCD.drawInt((int)(distance * 100), 0, 2);
+//			Delay.msDelay(500);
+//		}
 
 /*		touch1.fetchSample(sample_touch, 0);
 		LCD.drawInt((int)(sample_touch[0]), 0, 4);
@@ -118,6 +168,25 @@ public class Lab2 {
 		ma.backward();
 		mb.backward();
 		ma.endSynchronization();
+	}
+	
+	static void moveLeft(EV3MediumRegulatedMotor ma, EV3MediumRegulatedMotor mb){
+
+		ma.setSpeed(200);
+		mb.setSpeed(300);
+		forward(ma, mb);
+	}
+	static void moveRight(EV3MediumRegulatedMotor ma, EV3MediumRegulatedMotor mb){
+
+		ma.setSpeed(300);
+		mb.setSpeed(200);
+		forward(ma, mb);
+	}
+	static void equalMove(EV3MediumRegulatedMotor ma, EV3MediumRegulatedMotor mb){
+
+		ma.setSpeed(200);
+		mb.setSpeed(200);
+		forward(ma, mb);
 	}
 }
  
